@@ -27,54 +27,93 @@ Template.S3.events({
 			else
 			{
 				reader.onload = function (e) {
-					
-					//CANVAS
-					var canvas = document.createElement('canvas');
-					var img = document.createElement("img");
-					img.src = e.target.result;
-					img.onload = function (e) {
-						var ctx = canvas.getContext("2d");
-						ctx.drawImage(img, 0, 0);
 
-						var MAX_WIDTH = helper.data.width;
-						var MAX_HEIGHT = helper.data.height;
-						var width = img.width;
-						var height = img.height;
 
-						if (width > height) {
-						  if (width > MAX_WIDTH) {
-						    height *= MAX_WIDTH / width;
-						    width = MAX_WIDTH;
-						  }
-						} else {
-						  if (height > MAX_HEIGHT) {
-						    width *= MAX_HEIGHT / height;
-						    height = MAX_HEIGHT;
-						  }
+					//crop
+					var cropCanvas = document.createElement('canvas');
+					var crop_img = document.createElement("img");
+					crop_img.src = e.target.result;
+					crop_img.onload = function (e) {
+
+						var cropCoords = {
+							x : 0,
+							y : 0 
+						};
+
+
+						if(crop_img.height > crop_img.width)
+						{
+							cropCanvas.width = crop_img.width;
+							cropCanvas.height = crop_img.width;
 						}
-						canvas.width = width;
-						canvas.height = height;
-						ctx = canvas.getContext("2d");
-						ctx.drawImage(img, 0, 0, width, height);
-
-						var dataUrl = canvas.toDataURL(fileData.type);
-						var binaryImg = atob(dataUrl.slice(dataUrl.indexOf('base64')+7,dataUrl.length));
-						var length = binaryImg.length;
-						var ab = new ArrayBuffer(length);
-						var ua = new Uint8Array(ab);
-						for (var i = 0; i < length; i++){
-							ua[i] = binaryImg.charCodeAt(i);
+						else
+						{
+							cropCanvas.width = crop_img.height;
+							cropCanvas.height = crop_img.height;
 						}
 
-						fileData.data = ua;
-						Meteor.call("S3upload",fileData,context,callback, function(err, url){
-							var uploads = Session.get('S3uploads');
-							if(uploads.indexOf(url) == -1)
-								uploads.push(url);						
-							Session.set('S3uploads', uploads);
-							Session.set('S3url', url);
-							Session.set('uploading', false);
-						});
+				        if(crop_img.width > cropCanvas.width)
+							cropCoords.x = (crop_img.width - cropCanvas.width) / 2.0;
+				        if(crop_img.height > cropCanvas.height)
+				        	cropCoords.y = (crop_img.height - cropCanvas.height) / 2.0;
+
+						var crop_ctx = cropCanvas.getContext("2d");
+						crop_ctx.drawImage(
+							crop_img, 
+							cropCoords.x, 
+							cropCoords.y, 
+							cropCanvas.width, 
+							cropCanvas.height, 
+							0, 
+							0, 
+							cropCanvas.width, 
+							cropCanvas.height);
+
+						var crop_dataUrl = cropCanvas.toDataURL(fileData.type);
+
+						//resize
+						var resizeCanvas = document.createElement('canvas');
+						var resize_img = document.createElement("img");
+						resize_img.src = crop_dataUrl;
+						resize_img.onload = function (e) {
+
+							var FORCE_WIDTH = helper.data.width;
+							var FORCE_HEIGHT = helper.data.height;
+							var width = resize_img.width;
+							var height = resize_img.height;
+
+							if (width > height) {
+							    height *= FORCE_WIDTH / width;
+							    width = FORCE_WIDTH;
+							} else {
+							    width *= FORCE_HEIGHT / height;
+							    height = FORCE_HEIGHT;
+							}
+							resizeCanvas.width = width;
+							resizeCanvas.height = height;
+
+							var resize_ctx = resizeCanvas.getContext("2d");
+							resize_ctx.drawImage(resize_img, 0, 0, width, height);
+							var resize_dataUrl = resizeCanvas.toDataURL(fileData.type);
+
+							var binaryImg = atob(resize_dataUrl.slice(resize_dataUrl.indexOf('base64')+7,resize_dataUrl.length));
+							var length = binaryImg.length;
+							var ab = new ArrayBuffer(length);
+							var ua = new Uint8Array(ab);
+							for (var i = 0; i < length; i++){
+								ua[i] = binaryImg.charCodeAt(i);
+							}
+
+							fileData.data = ua;
+							Meteor.call("S3upload",fileData,context,callback, function(err, url){
+								var uploads = Session.get('S3uploads');
+								if(uploads.indexOf(url) == -1)
+									uploads.push(url);						
+								Session.set('S3uploads', uploads);
+								Session.set('S3url', url);
+								Session.set('uploading', false);
+							});
+						}
 					}
 				};
 				reader.readAsDataURL(file);
