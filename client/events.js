@@ -34,42 +34,53 @@ Template.S3.events({
 					var crop_img = document.createElement("img");
 					crop_img.src = e.target.result;
 					crop_img.onload = function (e) {
+						
+						var crop_dataUrl = crop_img.src;
+						
+						var crop = false;
+						if(helper.data.cropSquare == 'true')
+							crop = true;
+						else if(helper.data.cropSquare == 'false')
+							crop = false;
 
-						var cropCoords = {
-							x : 0,
-							y : 0 
-						};
-
-
-						if(crop_img.height > crop_img.width)
+						if(crop)
 						{
-							cropCanvas.width = crop_img.width;
-							cropCanvas.height = crop_img.width;
+							var cropCoords = {
+								x : 0,
+								y : 0 
+							};
+
+
+							if(crop_img.height > crop_img.width)
+							{
+								cropCanvas.width = crop_img.width;
+								cropCanvas.height = crop_img.width;
+							}
+							else
+							{
+								cropCanvas.width = crop_img.height;
+								cropCanvas.height = crop_img.height;
+							}
+
+					        if(crop_img.width > cropCanvas.width)
+								cropCoords.x = (crop_img.width - cropCanvas.width) / 2.0;
+					        if(crop_img.height > cropCanvas.height)
+					        	cropCoords.y = (crop_img.height - cropCanvas.height) / 2.0;
+
+							var crop_ctx = cropCanvas.getContext("2d");
+							crop_ctx.drawImage(
+								crop_img, 
+								cropCoords.x, 
+								cropCoords.y, 
+								cropCanvas.width, 
+								cropCanvas.height, 
+								0, 
+								0, 
+								cropCanvas.width, 
+								cropCanvas.height);
+
+							crop_dataUrl = cropCanvas.toDataURL(fileData.type);
 						}
-						else
-						{
-							cropCanvas.width = crop_img.height;
-							cropCanvas.height = crop_img.height;
-						}
-
-				        if(crop_img.width > cropCanvas.width)
-							cropCoords.x = (crop_img.width - cropCanvas.width) / 2.0;
-				        if(crop_img.height > cropCanvas.height)
-				        	cropCoords.y = (crop_img.height - cropCanvas.height) / 2.0;
-
-						var crop_ctx = cropCanvas.getContext("2d");
-						crop_ctx.drawImage(
-							crop_img, 
-							cropCoords.x, 
-							cropCoords.y, 
-							cropCanvas.width, 
-							cropCanvas.height, 
-							0, 
-							0, 
-							cropCanvas.width, 
-							cropCanvas.height);
-
-						var crop_dataUrl = cropCanvas.toDataURL(fileData.type);
 
 						//resize
 						var resizeCanvas = document.createElement('canvas');
