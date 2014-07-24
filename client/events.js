@@ -111,8 +111,11 @@ Template.S3.events({
                             fileData.data = ua;
                             Meteor.call("S3upload", fileData, context, callback, function(err, url) {
                                 var uploads = Session.get('S3uploads');
-                                if (uploads.indexOf(url) == -1)
-                                    uploads.push(url);
+                                if (uploads) {
+                                    if (uploads.indexOf(url) == -1)
+                                        uploads.push(url);
+                                } else
+                                    uploads = [url];
                                 Session.set('S3uploads', uploads);
 
                                 var urls = Session.get('S3urls');
