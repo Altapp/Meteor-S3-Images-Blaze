@@ -113,10 +113,14 @@ Template.S3.events({
                                 var uploads = Session.get('S3uploads');
                                 if (uploads.indexOf(url) == -1)
                                     uploads.push(url);
-                                var urls = Session.get('S3urls');
-                                if (urls.indexOf(url) == -1)
-                                    urls.push(url);
                                 Session.set('S3uploads', uploads);
+
+                                var urls = Session.get('S3urls');
+                                if (urls) {
+                                    if (urls.indexOf(url) == -1)
+                                        urls.push(url);
+                                } else
+                                    urls = [url];
                                 Session.set('S3urls', urls);
                                 Session.set('uploading', false);
                             });
