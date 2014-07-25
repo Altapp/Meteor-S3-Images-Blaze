@@ -3,7 +3,7 @@
     "description": "Resize images and upload to S3. Allows use of Knox Server-Side and get files urls on client-side. For post-v0.8.0 Meteor.",
     "homepage": "https://github.com/manybothans/Meteor-S3-Images-Blaze",
     "author": "ManyBothans <jess@altapp.ca>",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "git": "https://github.com/manybothans/Meteor-S3-Images-Blaze.git",
     "packages": {}
 }

@@ -27,10 +27,23 @@ Meteor.call("S3config",{
 Create an S3 input with a callback. CLIENT SIDE.
 
 ``` handlebars
-{{#S3 callback="callbackFunction" height=300 width=300}}
-	<input type="file">
+{{#S3 callback="callbackFunction" height=300 width=300 cropSquare='true'}}
+	<input type="file" accept="image/*">
 {{/S3}}
 ```
+This will resize uploaded image to max height and width provider, and crop to a centered square if `cropSquare='true'`.
+
+There are 3 session variables provided:
+
+``` javascript
+Session.get('uploading'); //bool, if an upload is in progress
+
+//two lists of URLs are provided to differentiate between all uploads and uploads the user 
+//wishes to keep; this upkeep must be handled by your code.
+Session.get('S3urls'); //array, list of uploaded URLs in this session, must be reset manually
+Session.get('S3uploads'); //array, list of uploaded URLs in this session, must be reset manually
+
+``` 
 
 ### Step 3
 Create a callback function that will handle what to do with the generated URL. SERVER SIDE.
