@@ -6,7 +6,7 @@ This is a fork of the original work from @Lepozepo and additional work by @Donfl
 ## Installation
 
 ``` sh
-$ mrt add S3-Images-Blaze
+$ meteor add jplatimer:s3-images-blaze
 ```
 
 ## How to use
