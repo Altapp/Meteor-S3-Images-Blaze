@@ -1,7 +1,7 @@
 Package.describe({
 	summary: "Upload files to S3. Allows use of Knox Server-Side and get files urls on client-side.",
 	git: "https://github.com/manybothans/Meteor-S3-Images-Blaze.git",
-    version: "1.1.1",
+    version: "1.1.2",
     name: "jplatimer:s3-images-blaze",
 });
 

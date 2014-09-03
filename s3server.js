@@ -27,7 +27,7 @@ Meteor.methods({
 		});
 
 		if(future.wait() && callback){
-			var url = knox.http(future.wait());
+			var url = knox.https(future.wait());
 			Meteor.call(callback,url,context);
 			return url;
 		}
