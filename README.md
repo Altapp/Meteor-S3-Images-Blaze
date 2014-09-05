@@ -6,7 +6,7 @@ This is a fork of the original work from @Lepozepo and additional work by @Donfl
 ## Installation
 
 ``` sh
-$ meteor add jplatimer:s3-images-blaze
+$ meteor add altapp:s3-images-blaze
 ```
 
 ## How to use

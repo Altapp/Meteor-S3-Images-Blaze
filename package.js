@@ -1,8 +1,8 @@
 Package.describe({
+    name: "altapp:s3-images-blaze",
 	summary: "Upload files to S3. Allows use of Knox Server-Side and get files urls on client-side.",
-	git: "https://github.com/manybothans/Meteor-S3-Images-Blaze.git",
-    version: "1.1.2",
-    name: "jplatimer:s3-images-blaze",
+	git: "https://github.com/Altapp/Meteor-S3-Images-Blaze.git",
+    version: "1.2.0"
 });
 
 /* This defines your actual package */
