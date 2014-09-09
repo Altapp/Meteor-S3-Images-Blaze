@@ -17,6 +17,11 @@ Template.S3.events({
                 size: file.size,
                 type: file.type
             };
+            var thumbFileData = {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            };
 
 
             Session.set('uploading', true);
@@ -25,27 +30,54 @@ Template.S3.events({
             } else {
                 reader.onload = function(e) {
 
+                    //original
+                    var originalCanvas = document.createElement('canvas');
+                    var original_img = document.createElement("img");
+                    original_img.src = e.target.result;
+                    original_img.onload = function(e) {
 
-                    //crop
-                    var cropCanvas = document.createElement('canvas');
-                    var crop_img = document.createElement("img");
-                    crop_img.src = e.target.result;
-                    crop_img.onload = function(e) {
+                        var MAX_WIDTH = helper.data.width;
+                        var MAX_HEIGHT = helper.data.height;
+                        var width = original_img.width;
+                        var height = original_img.height;
 
-                        var crop_dataUrl = crop_img.src;
+                        if (width > height) {
+                            if(width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if(height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        originalCanvas.width = width;
+                        originalCanvas.height = height;
 
-                        var crop = false;
-                        if (helper.data.cropSquare == 'true')
-                            crop = true;
-                        else if (helper.data.cropSquare == 'false')
-                            crop = false;
+                        var original_ctx = originalCanvas.getContext("2d");
+                        original_ctx.drawImage(original_img, 0, 0, width, height);
+                        var original_dataUrl = originalCanvas.toDataURL(fileData.type);
 
-                        if (crop) {
+                        var binaryImg = atob(original_dataUrl.slice(original_dataUrl.indexOf('base64') + 7, original_dataUrl.length));
+                        var length = binaryImg.length;
+                        var ab = new ArrayBuffer(length);
+                        var ua = new Uint8Array(ab);
+                        for (var i = 0; i < length; i++) {
+                            ua[i] = binaryImg.charCodeAt(i);
+                        }
+                        fileData.data = ua;
+
+                        //crop
+                        var cropCanvas = document.createElement('canvas');
+                        var crop_img = document.createElement("img");
+                        crop_img.src = original_dataUrl;
+                        crop_img.onload = function(e) {
+
                             var cropCoords = {
                                 x: 0,
                                 y: 0
                             };
-
 
                             if (crop_img.height > crop_img.width) {
                                 cropCanvas.width = crop_img.width;
@@ -72,68 +104,67 @@ Template.S3.events({
                                 cropCanvas.width,
                                 cropCanvas.height);
 
-                            crop_dataUrl = cropCanvas.toDataURL(fileData.type);
-                        }
+                            var crop_dataUrl = cropCanvas.toDataURL(fileData.type);
 
-                        //resize
-                        var resizeCanvas = document.createElement('canvas');
-                        var resize_img = document.createElement("img");
-                        resize_img.src = crop_dataUrl;
-                        resize_img.onload = function(e) {
 
-                            var FORCE_WIDTH = helper.data.width;
-                            var FORCE_HEIGHT = helper.data.height;
-                            var width = resize_img.width;
-                            var height = resize_img.height;
+                            //resize
+                            var resizeCanvas = document.createElement('canvas');
+                            var resize_img = document.createElement("img");
+                            resize_img.src = crop_dataUrl;
+                            resize_img.onload = function(e) {
 
-                            if (width > height) {
-                                height *= FORCE_WIDTH / width;
-                                width = FORCE_WIDTH;
-                            } else {
-                                width *= FORCE_HEIGHT / height;
-                                height = FORCE_HEIGHT;
+                                var FORCE_WIDTH = 300;
+                                var FORCE_HEIGHT = 300;
+                                var width = resize_img.width;
+                                var height = resize_img.height;
+
+                                if (width > height) {
+                                    height *= FORCE_WIDTH / width;
+                                    width = FORCE_WIDTH;
+                                } else {
+                                    width *= FORCE_HEIGHT / height;
+                                    height = FORCE_HEIGHT;
+                                }
+                                resizeCanvas.width = width;
+                                resizeCanvas.height = height;
+
+                                var resize_ctx = resizeCanvas.getContext("2d");
+                                resize_ctx.drawImage(resize_img, 0, 0, width, height);
+                                var resize_dataUrl = resizeCanvas.toDataURL(fileData.type);
+
+                                binaryImg = atob(resize_dataUrl.slice(resize_dataUrl.indexOf('base64') + 7, resize_dataUrl.length));
+                                length = binaryImg.length;
+                                ab = new ArrayBuffer(length);
+                                ua = new Uint8Array(ab);
+                                for (var i = 0; i < length; i++) {
+                                    ua[i] = binaryImg.charCodeAt(i);
+                                }
+                                thumbFileData.data = ua;
+
+                                Meteor.call("S3upload", fileData, thumbFileData, context, callback, function(err, url) {
+                                    var uploads = Session.get('S3uploads');
+                                    if (uploads) {
+                                        if (uploads.indexOf(url) == -1)
+                                            uploads.push(url);
+                                    } else
+                                        uploads = [url];
+                                    Session.set('S3uploads', uploads);
+
+                                    var urls = Session.get('S3urls');
+                                    if (urls) {
+                                        if (urls.indexOf(url) == -1)
+                                            urls.push(url);
+                                    } else
+                                        urls = [url];
+                                    Session.set('S3urls', urls);
+                                    Session.set('uploading', false);
+                                });
                             }
-                            resizeCanvas.width = width;
-                            resizeCanvas.height = height;
-
-                            var resize_ctx = resizeCanvas.getContext("2d");
-                            resize_ctx.drawImage(resize_img, 0, 0, width, height);
-                            var resize_dataUrl = resizeCanvas.toDataURL(fileData.type);
-
-                            var binaryImg = atob(resize_dataUrl.slice(resize_dataUrl.indexOf('base64') + 7, resize_dataUrl.length));
-                            var length = binaryImg.length;
-                            var ab = new ArrayBuffer(length);
-                            var ua = new Uint8Array(ab);
-                            for (var i = 0; i < length; i++) {
-                                ua[i] = binaryImg.charCodeAt(i);
-                            }
-
-                            fileData.data = ua;
-                            Meteor.call("S3upload", fileData, context, callback, function(err, url) {
-                                var uploads = Session.get('S3uploads');
-                                if (uploads) {
-                                    if (uploads.indexOf(url) == -1)
-                                        uploads.push(url);
-                                } else
-                                    uploads = [url];
-                                Session.set('S3uploads', uploads);
-
-                                var urls = Session.get('S3urls');
-                                if (urls) {
-                                    if (urls.indexOf(url) == -1)
-                                        urls.push(url);
-                                } else
-                                    urls = [url];
-                                Session.set('S3urls', urls);
-                                Session.set('uploading', false);
-                            });
                         }
                     }
                 };
                 reader.readAsDataURL(file);
             }
-
-
         });
     }
 });

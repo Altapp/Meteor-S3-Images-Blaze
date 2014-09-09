@@ -9,18 +9,29 @@ Meteor.methods({
 		knox = Knox.createClient(obj);
 		S3 = {directory:obj.directory || "/"};
 	},
-	S3upload:function(file,context,callback){
+	S3upload:function(file, thumb, context,callback){
 		var future = new Future();
 
 		var extension = (file.name).match(/\.[0-9a-z]{1,5}$/i);
-		file.name = Meteor.uuid()+extension;
+		var uuid = Meteor.uuid();
+		
+		file.name = uuid+extension;
+		thumb.name = uuid+'_thumb'+extension;
 		var path = S3.directory+file.name;
+		var pathThumb = S3.directory+thumb.name;
 
 		var buffer = new Buffer(file.data);
+		var bufferThumb = new Buffer(thumb.data);
 
 		knox.putBuffer(buffer,path,{"Content-Type":file.type,"Content-Length":buffer.length},function(e,r){
 			if(!e){
-				future.return(path);
+				knox.putBuffer(bufferThumb,pathThumb,{"Content-Type":thumb.type,"Content-Length":bufferThumb.length},function(e,r){
+					if(!e){
+						future.return(path);
+					} else {
+						console.log(e);
+					}
+				});
 			} else {
 				console.log(e);
 			}
